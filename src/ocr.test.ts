@@ -33,3 +33,18 @@ describe('screenshot review drafts', () => {
     expect(parseScreenshotText(`${GEARS[0].name}\nLevel 50\nFusion 0`, 'gear')[0]).toMatchObject({ level: null, fusion: 0 });
   });
 });
+
+
+describe('automatic screenshot type', () => {
+  it('recognizes a gear screenshot without choosing an equipment tab', () => {
+    expect(parseScreenshotText(`${GEARS[0].name}\nFusion VIII`, 'auto')[0]).toMatchObject({kind:'gear', id:GEARS[0].id, fusion:8});
+  });
+  it('recognizes a fighter screenshot without choosing a fighter tab', () => {
+    expect(parseScreenshotText(`${CHARACTERS[0].name}\nLevel 50\nFusion V`, 'auto')[0]).toMatchObject({kind:'character', id:CHARACTERS[0].id, level:50, fusion:5});
+  });
+  it('does not transfer stats between mixed card types', () => {
+    const result=parseScreenshotText(`${CHARACTERS[0].name}\nLevel 50\nFusion V\n${GEARS[0].name}`, 'auto');
+    expect(result).toHaveLength(2);
+    expect(result.every(d=>d.level===null && d.fusion===null)).toBe(true);
+  });
+});

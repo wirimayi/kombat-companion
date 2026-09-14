@@ -16,7 +16,13 @@ function labeled(text: string, label: string, max: number, min = 0): number | nu
 }
 
 /** Text-only OCR cannot safely associate grid statistics with individual tiles. */
-export function parseScreenshotText(text: string, kind: Kind): OCRDraft[] {
+export function parseScreenshotText(text: string, kind: Kind | 'auto'): OCRDraft[] {
+  if (kind === 'auto') {
+    const found = [...parseScreenshotText(text, 'character'), ...parseScreenshotText(text, 'gear')].filter(d => d.id);
+    // Mixed screenshots have no reliable text-only association between stats and cards.
+    if (found.length > 1) return found.map(d => ({...d, level:null, fusion:null, ascension:null}));
+    return found.length ? found : parseScreenshotText(text, 'character');
+  }
   const normalized = ` ${normalize(text)} `;
   const catalog = kind === 'gear' ? GEARS : CHARACTERS;
   const matches = catalog.filter(card => normalized.includes(` ${normalize(card.name)} `));
@@ -33,7 +39,7 @@ export function parseScreenshotText(text: string, kind: Kind): OCRDraft[] {
 
 let active = false;
 export async function recognizeScreenshot(
-  file: File, kind: Kind, onProgress: (progress: number, status: string) => void,
+  file: File, kind: Kind | 'auto', onProgress: (progress: number, status: string) => void,
 ): Promise<{ text: string; drafts: OCRDraft[] }> {
   if (active) throw new Error('Please wait for the current screenshot to finish.');
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('Choose a PNG, JPEG or WebP screenshot.');

@@ -1,0 +1,32 @@
+import {chromium,webkit,devices} from '@playwright/test';
+import {mkdir,writeFile} from 'node:fs/promises';
+await mkdir('work/screenshots',{recursive:true});
+const report=[];
+for(const [name,type] of [['chromium',chromium],['webkit',webkit]]){
+ const browser=await type.launch({headless:true});
+ const context=await browser.newContext({...devices['iPhone 13'],browserName:undefined});
+ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:4173/');
+ await page.getByRole('heading',{name:/Stronger teams/}).waitFor();
+ await page.screenshot({path:`work/screenshots/${name}-home.png`,fullPage:true});
+ await page.getByRole('button',{name:/Try a demo collection/}).click();
+ await page.getByRole('button',{name:'Find my team'}).click();
+ await page.getByRole('heading',{name:'Three fighters. One game plan.'}).waitFor();
+ await page.screenshot({path:`work/screenshots/${name}-team.png`,fullPage:true});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+ if(overflow)throw Error(name+' mobile overflow');
+ await page.getByRole('button',{name:'Exit demo'}).click();
+ await page.getByRole('button',{name:'Collection',exact:true}).click();
+ await page.getByRole('button',{name:'Add manually',exact:true}).click();
+ await page.getByLabel('Exact card',{exact:true}).selectOption('mk11-scorpion');
+ await page.getByLabel('Level',{exact:true}).fill('50');
+ await page.getByLabel('Fusion',{exact:true}).selectOption('5');
+ await page.getByRole('button',{name:'Save card',exact:true}).click();
+ await page.getByRole('heading',{name:'MK11 Scorpion',exact:true}).waitFor();
+ await page.reload();
+ await page.getByRole('button',{name:'Collection',exact:true}).click();
+ await page.getByRole('heading',{name:'MK11 Scorpion',exact:true}).waitFor();
+ report.push({browser:name,persistence:true,overflow,errors});
+ await browser.close();
+}
+await writeFile('work/browser-report.json',JSON.stringify(report,null,2));console.log(report);

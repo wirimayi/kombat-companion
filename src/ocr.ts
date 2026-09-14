@@ -1,8 +1,9 @@
+import {readCollectionGrid} from './grid-reader';
 import { CHARACTERS, GEARS } from './game';
 
 export type OCRDraft = {
   kind: 'character' | 'gear' | 'kameo'; id: string | null; name: string;
-  level: number | null; fusion: number | null; ascension: number | null; raw: string;
+  level: number | null; fusion: number | null; ascension: number | null; raw: string; thumbnail?:string; available?:boolean;
 };
 type Kind = OCRDraft['kind'];
 const normalize = (value: string) => value.normalize('NFKD').replace(/[’‘]/g, "'").toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -55,10 +56,15 @@ export async function recognizeScreenshot(
     if (!img.naturalWidth || !img.naturalHeight || img.naturalWidth * img.naturalHeight > 24000000) throw new Error('Use a screenshot with fewer than 24 million pixels.');
     const { createWorker, PSM } = await import('tesseract.js');
     const base = import.meta.env.BASE_URL;
+    let readingGrid=false;
     worker = await createWorker('eng', 1, {
       workerPath: `${base}ocr/worker.min.js`, corePath: `${base}ocr/core`, langPath: `${base}ocr/lang`,
-      logger: message => onProgress(Math.max(0, Math.min(1, message.progress || 0)), message.status),
+      logger: message => {if(!readingGrid)onProgress(Math.max(0, Math.min(1, message.progress || 0)), message.status);},
     });
+    readingGrid=true;
+    const grid=await readCollectionGrid(img,worker,onProgress,kind);
+    if(grid){onProgress(1,'Ready for review');return {text:'Collection grid',drafts:grid};}
+    readingGrid=false;
     await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
     const result = await worker.recognize(img);
     onProgress(1, 'Ready for review');

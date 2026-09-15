@@ -3,7 +3,7 @@ import { CHARACTERS, GEARS } from './game';
 
 export type OCRDraft = {
   kind: 'character' | 'gear' | 'kameo'; id: string | null; name: string;
-  level: number | null; fusion: number | null; ascension: number | null; raw: string; thumbnail?:string; available?:boolean;
+  level: number | null; fusion: number | null; ascension: number | null; raw: string; thumbnail?:string; available?:boolean; recognized?:boolean; ownedEvidence?:boolean;
 };
 type Kind = OCRDraft['kind'];
 const normalize = (value: string) => value.normalize('NFKD').replace(/[’‘]/g, "'").toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

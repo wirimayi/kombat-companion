@@ -1,3 +1,4 @@
+import {validateScans,type ScanCard} from './scans';
 import type { Collection } from './game';
 
 const MAX_BYTES = 2_000_000;
@@ -130,4 +131,13 @@ export async function saveCollection(collection: Collection): Promise<void> {
 export async function requestPersistentStorage(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.storage?.persist) return false;
   return navigator.storage.persist();
+}
+
+export async function loadScans():Promise<ScanCard[]> {
+ const db=await openDatabase();
+ try {return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const req=tx.objectStore(STORE).get('scans');tx.oncomplete=()=>{try{resolve(validateScans(req.result??[]));}catch(e){reject(e);}};tx.onabort=()=>reject(tx.error);tx.onerror=()=>reject(tx.error);});}finally{db.close();}
+}
+export async function saveScans(cards:ScanCard[]):Promise<void>{
+ const valid=validateScans(cards),db=await openDatabase();
+ try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(valid,'scans');tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);tx.onerror=()=>reject(tx.error);});}finally{db.close();}
 }

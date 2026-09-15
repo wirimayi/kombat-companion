@@ -1,33 +1,28 @@
-# Validation and release limits
+# Simplified upload and team flow — 2026-09-15
 
-Build reviewed on 15 September 2026.
+## Changes
+- Replaced the sidebar, draft editors and lengthy builder with a single upload → destination → team screen.
+- Automatically saves confidently recognized identities with readable level/power ownership evidence, including names outside strategy coverage.
+- Separately persists nullable scanned upgrades; conservative estimates exist only in the scoring projection.
+- Deduplicates repeated screenshots; preserves previously entered fusion when the new scan cannot read it.
+- Gear power crop excludes the equipment icon. Locked-card sample no longer turns icon shapes into ownership numbers.
+- Compact results show three fighters and assigned equipment. Explanations, limits, saved cards and backups are collapsed.
+- Legacy collections and version-1 backups remain usable. Version-2 backup includes the nullable scanned collection.
 
-## Verified
+## Verification
+- 53 tests pass, including seven new tests for automatic acceptance, locked/unreadable exclusion, duplicate merging, nullable persistence, conservative gear effects, complete unique-gear team generation and invalid backup values.
+- Production build passes.
+- Browser upload of IMG_6393, IMG_6403 and IMG_6420 accepted fighter, gear and Kameo types in one batch. No manual identity or Save action was required before generating a team.
+- Initial test exposed gear-icon contamination. Narrowed power crop read all 18 gear power values correctly in the native-resolution diagnostic for IMG_6403. In IMG_6418, owned gear yielded values while 14 locked tiles yielded blank power.
+- Browser then processed the remaining supplied gallery screenshots: final saved collection contains 153 fighters, 189 gear and 58 Kameos. This is an observed import count, not a measured recall/precision score.
+- Collection survived browser reload; the UI exported a valid version-2 JSON with 400 scanned cards.
+- With that collection, the Krypt result assigned three fighters and 12 unique pieces of equipment, plus a Kameo, without filling any fusion fields.
 
-- 46 automated tests pass: equipment uniqueness and slots, fusion gates, ascension exception, exclusions and mode rules, conditional effects, conservative screenshot parsing, backup validation, duplicate handling and IndexedDB round trips.
-- TypeScript and production Vite build pass.
-- Browser UI: manual card entry persists across reload, deletion works, demo produces three fighters and assigned gear, and phone-width layout has no horizontal overflow at 390 pixels.
-- Actual browser Tesseract processing of a synthetic card image correctly recognised MK11 Scorpion, level 50 and fusion V; output remained a review draft and did not overwrite the collection. This fixture is not a real game screenshot.
-- Offline service worker and locally served OCR assets are included. The in-app browser and automated Chrome tab showed a blank page when reloaded with the preview server stopped; offline reload has not passed acceptance. Registration now also handles an already-loaded document, but real Safari offline testing is still required.
-
-## Real screenshot checks
-
-36 game screenshots were supplied. Local OCR experiments used fighter, gear, Kameo and owned/locked transition grids. The browser upload flow was tested with three real images and produced review drafts without changing the saved collection. All 18 levels in the first fighter grid were read correctly; two fighter names remained unreadable in that browser run. A reviewed MK11 Scorpion was saved and persisted across reload.
-
-The initial mixed-batch browser test misclassified the Kameo screen. The corrected Kameo-tab path was retested: all 18 drafts were Kameos, with 14 readable levels and four left blank. This is a limited acceptance sample, not an accuracy claim across all 36 screenshots. Mixed automatic Kameo detection has not yet been retested after its correction.
-
-Grid fusion and ascension deliberately remain blank for user confirmation because valid-looking Roman OCR values were sometimes wrong. Locked cards are not automatically distinguished from unreadable cards; ownership must be checked in review. Partially visible edge cards and unsupported layouts may be missed. Krypt team-selection layouts have not passed acceptance. The name dictionary is larger than the verified combat catalog; identifying a name does not make its mechanics supported.
-
-## Remaining limits
-
- Actual iPhone hardware, storage eviction and Home Screen behavior are untested. Standalone Playwright launch was blocked by the host sandbox; browser UI checks used the available browser automation instead.
-
-Catalog coverage is deliberately limited. Sources include official rules and patch corrections plus selected card references linked in the catalog. Qualitative scoring weights are implementation choices, not measured damage or clear-time data. The search shortlists teams before evaluating equipment and can miss better combinations. It does not claim mathematical optimality.
-
-Stage II exceptions are implemented for verified eligible entries. Remaining mode fusion/account gates and seasonal conditions need checking in game. Kameo support uses entered effects and progression, not a verified complete Kameo catalog. Talents provide conditional advice, not a complete allocation optimizer. No enemy-specific battle analysis is included.
-
-## Research precedence
-
-Official patch corrections take precedence over older mode guides. In particular, update 6.1 changed Krypt to one floor; update 7.3 documents Stage II Gold eligibility and fourth slots. Realm Klash tower defense uses a seasonal draft and is outside this owned-collection app. Source links and a rules version are retained in src/game.ts and displayed in Field notes.
-
-Before relying on recommendations across a real collection, compare the supported catalog against the owned roster, verify missing cards and upgrades, and record real runs in each selected mode. Automated legality checks alone cannot establish faster clears.
+## Remaining limitations
+- 74 of the 400 imported identities have strategy profiles. Remaining recognized identities are retained but excluded from ranking.
+- Fusion/ascension badges are not reliably read. Unknown values stay null; lower-level fighter scoring is conservative. Missing fusion can substantially alter recommendations.
+- Some names/levels and clipped columns are missed. All 400 individual identities and values have not been independently audited.
+- On-quest text detection is best effort; availability can be corrected under saved cards.
+- The five Krypt team-selection screenshots use a different layout and were not included in this gallery import.
+- Exact bosses, modifiers, seasonal bonuses, fastest-clear claims and offline reopening are not verified.
+- User screenshots and personal collection export remain local and are excluded from publication and distributable ZIPs.

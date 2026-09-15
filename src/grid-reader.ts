@@ -58,10 +58,11 @@ export async function readCollectionGrid(img:HTMLImageElement,worker:Worker,prog
   const gear=gearScreen,kameo=kameoScreen;
   const kind:OCRDraft['kind']=gear?'gear':kameo?'kameo':'character';
   const name=await read(crop(r,.045,gear?.12:.51,.91,gear?.21:kameo?.17:.25));
-  let level=await read(crop(r,gear?.46:.365,gear?.75:kameo?.67:.735,gear?.27:.28,gear?.11:.105,'light'),true);
+  let level=await read(crop(r,gear?.56:.365,gear?.75:kameo?.67:.735,gear?.20:.28,gear?.11:.105,'light'),true);
   if(!gear&&levelValue(level.text)===null)level=await read(crop(r,.365,kameo?.67:.735,.28,.105),true);
   // A missing number may be a locked card or unreadable text. Keep a review draft; never infer ownership.
-  const readableNumber=/\d/.test(level.text);
+  const power=level.text.trim();
+  const readableNumber=gear ? /^\d{1,2}$/.test(power)&&Number(power)>=5&&Number(power)<=50 : levelValue(level.text)!==null;
   let identity=matchGridName(name.text,kind);
   let extraText='';
   if(!identity.recognized){
@@ -72,7 +73,7 @@ export async function readCollectionGrid(img:HTMLImageElement,worker:Worker,prog
   const reviewNote=readableNumber?'Confirm fusion against the card image.':'No readable level or power. Confirm this card is owned before entering its values.';
   const lv=kind==='gear'?null:levelValue(level.text);
   const raw=`${name.text}\n${extraText}\nLevel/power region: ${level.text}\n${reviewNote}`;
-  drafts.push({...identity,kind,level:lv,fusion:null,ascension:kind==='character'?null:0,raw,thumbnail:crop(r,0,0,1,1).toDataURL('image/jpeg',.65),available:true});
+  drafts.push({...identity,ownedEvidence:readableNumber,kind,level:lv,fusion:null,ascension:kind==='character'?null:0,raw,thumbnail:crop(r,0,0,1,1).toDataURL('image/jpeg',.65),available:!(/ON\s*QUEST/i.test(name.text+' '+extraText))});
  }
  return drafts.length?drafts:null;
 }

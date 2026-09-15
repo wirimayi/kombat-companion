@@ -1,4 +1,4 @@
-import {collectionRects,levelValue,type GridRect} from './grid';
+import {collectionRects,levelValue,romanValue,type GridRect} from './grid';
 import {FIGHTER_NAMES,EQUIPMENT_NAMES} from './recognition-names';
 import {CHARACTERS,GEARS} from './game';
 import type {OCRDraft} from './ocr';
@@ -60,6 +60,8 @@ export async function readCollectionGrid(img:HTMLImageElement,worker:Worker,prog
   const name=await read(crop(r,.045,gear?.12:.51,.91,gear?.21:kameo?.17:.25));
   let level=await read(crop(r,gear?.56:.365,gear?.75:kameo?.67:.735,gear?.20:.28,gear?.11:.105,'light'),true);
   if(!gear&&levelValue(level.text)===null)level=await read(crop(r,.365,kameo?.67:.735,.28,.105),true);
+  await worker.setParameters({user_defined_dpi:'300',tessedit_pageseg_mode:PSM.SINGLE_LINE,tessedit_char_whitelist:'IVX'});
+  const fusionText=(await worker.recognize(crop(r,.405,.012,.19,.06,'dark'))).data.text;
   // A missing number may be a locked card or unreadable text. Keep a review draft; never infer ownership.
   const power=level.text.trim();
   const readableNumber=gear ? /^\d{1,2}$/.test(power)&&Number(power)>=5&&Number(power)<=50 : levelValue(level.text)!==null;
@@ -72,8 +74,9 @@ export async function readCollectionGrid(img:HTMLImageElement,worker:Worker,prog
   if(!identity.name)identity.name='Unreadable card';
   const reviewNote=readableNumber?'Confirm fusion against the card image.':'No readable level or power. Confirm this card is owned before entering its values.';
   const lv=kind==='gear'?null:levelValue(level.text);
-  const raw=`${name.text}\n${extraText}\nLevel/power region: ${level.text}\n${reviewNote}`;
-  drafts.push({...identity,ownedEvidence:readableNumber,kind,level:lv,fusion:null,ascension:kind==='character'?null:0,raw,thumbnail:crop(r,0,0,1,1).toDataURL('image/jpeg',.65),available:!(/ON\s*QUEST/i.test(name.text+' '+extraText))});
+  const fusion=lv!==null&&lv>50?10:romanValue(fusionText);
+  const raw=`${name.text}\n${extraText}\nLevel/power region: ${level.text}\nFusion badge: ${fusionText}\n${reviewNote}`;
+  drafts.push({...identity,ownedEvidence:readableNumber,kind,level:lv,fusion,ascension:kind==='character'?null:0,raw,thumbnail:crop(r,0,0,1,1).toDataURL('image/jpeg',.65),available:!(/ON\s*QUEST/i.test(name.text+' '+extraText))});
  }
  return drafts.length?drafts:null;
 }

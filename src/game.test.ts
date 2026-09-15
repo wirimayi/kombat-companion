@@ -4,6 +4,21 @@ const c=(id:string,overrides:Partial<OwnedCharacter>={}):OwnedCharacter=>({id,le
 const settings:Settings={mode:'tower',tower:'Tower of Horror',difficulty:'normal',realmMode:'quick',playStyle:'manual',useKameo:false};
 const roster=()=>({...emptyCollection(),characters:[c('mk11-scorpion'),c('mk11-jade'),c('mk11-raiden')]});
 describe('recommendation constraints',()=>{
+ it('uses the vetted MK11 plan in its correct starting order',()=>{
+  const collection={...emptyCollection(),characters:[c('mk11-raiden',{level:60,fusion:10}),c('mk11-jade',{level:60,fusion:10}),c('mk11-scorpion'),c('mk11-liu-kang'),c('mk11-subzero')],gear:GEARS.map(g=>({id:g.id,fusion:10}))};
+  const result=recommend(collection,{...settings,fightType:'regular'}).recommendations[0];
+  expect(result.planName).toBe('MK11 pressure and rescue');
+  expect(result.team.map(m=>m.character.id)).toEqual(['mk11-liu-kang','mk11-scorpion','mk11-subzero']);
+  expect(result.rotation[0]).toContain('Tag him in immediately');
+  expect(new Set(result.team.flatMap(m=>m.gear.map(g=>g.id))).size).toBe(result.team.flatMap(m=>m.gear).length);
+ });
+ it('reserves the Soak plan for manual Tower bosses',()=>{
+  const collection={...emptyCollection(),characters:[c('klassic-rain'),c('klassic-raiden'),c('klassic-liu-kang')],gear:GEARS.map(g=>({id:g.id,fusion:10}))};
+  const boss=recommend(collection,{...settings,fightType:'boss'}).recommendations[0];
+  expect(boss.planName).toBe('Klassic Soak boss team');
+  expect(boss.rotation.join(' ')).toContain('Soaked');
+  expect(recommend(collection,{...settings,fightType:'boss',playStyle:'auto'}).recommendations[0].planName).toBeUndefined();
+ });
  it('fails gracefully on empty, unsupported, duplicate and unavailable cards',()=>{
   expect(recommend(emptyCollection(),settings).recommendations).toHaveLength(0);
   const collection=roster();collection.characters=[c('unknown'),c('mk11-jade'),c('mk11-jade'),c('mk11-raiden',{available:false})];

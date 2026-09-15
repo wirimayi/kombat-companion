@@ -1,28 +1,29 @@
-# Simplified upload and team flow — 2026-09-15
+# Recommendation rebuild and release limits
 
-## Changes
-- Replaced the sidebar, draft editors and lengthy builder with a single upload → destination → team screen.
-- Automatically saves confidently recognized identities with readable level/power ownership evidence, including names outside strategy coverage.
-- Separately persists nullable scanned upgrades; conservative estimates exist only in the scoring projection.
-- Deduplicates repeated screenshots; preserves previously entered fusion when the new scan cannot read it.
-- Gear power crop excludes the equipment icon. Locked-card sample no longer turns icon shapes into ownership numbers.
-- Compact results show three fighters and assigned equipment. Explanations, limits, saved cards and backups are collapsed.
-- Legacy collections and version-1 backups remain usable. Version-2 backup includes the nullable scanned collection.
+Build reviewed on 15 September 2026.
 
-## Verification
-- 53 tests pass, including seven new tests for automatic acceptance, locked/unreadable exclusion, duplicate merging, nullable persistence, conservative gear effects, complete unique-gear team generation and invalid backup values.
-- Production build passes.
-- Browser upload of IMG_6393, IMG_6403 and IMG_6420 accepted fighter, gear and Kameo types in one batch. No manual identity or Save action was required before generating a team.
-- Initial test exposed gear-icon contamination. Narrowed power crop read all 18 gear power values correctly in the native-resolution diagnostic for IMG_6403. In IMG_6418, owned gear yielded values while 14 locked tiles yielded blank power.
-- Browser then processed the remaining supplied gallery screenshots: final saved collection contains 153 fighters, 189 gear and 58 Kameos. This is an observed import count, not a measured recall/precision score.
-- Collection survived browser reload; the UI exported a valid version-2 JSON with 400 scanned cards.
-- With that collection, the Krypt result assigned three fighters and 12 unique pieces of equipment, plus a Kameo, without filling any fusion fields.
+## Verified
 
-## Remaining limitations
-- 74 of the 400 imported identities have strategy profiles. Remaining recognized identities are retained but excluded from ranking.
-- Fusion/ascension badges are not reliably read. Unknown values stay null; lower-level fighter scoring is conservative. Missing fusion can substantially alter recommendations.
-- Some names/levels and clipped columns are missed. All 400 individual identities and values have not been independently audited.
-- On-quest text detection is best effort; availability can be corrected under saved cards.
-- The five Krypt team-selection screenshots use a different layout and were not included in this gallery import.
-- Exact bosses, modifiers, seasonal bonuses, fastest-clear claims and offline reopening are not verified.
-- User screenshots and personal collection export remain local and are excluded from publication and distributable ZIPs.
+- 55 automated tests pass. New cases prove that a higher-level distraction cannot displace the reviewed MK11 core, the opening order is correct, gear is never reused, missing slots are not padded, and the Soaked plan is gated to manual Tower bosses.
+- TypeScript and the production Vite build pass.
+- The build contains the complete offline OCR assets and regenerated service worker.
+
+## Recommendation changes
+
+- Progression-first guesses are replaced by four reviewed strategy plans: MK11 pressure and rescue, Klassic Soak bosses, Kombat Cup control, and Strike Force rescue.
+- Each plan fixes the starting order, fighter jobs, gear shortlist, and combat rotation. Missing planned gear leaves a visible open slot instead of being replaced by unrelated equipment.
+- Tower recommendations distinguish regular floors from boss floors. The Soaked/Lightning plan is offered only for manual boss play; the Fire-pressure plan is limited to regular floors.
+- Kameos are omitted from reviewed plans until their assist effects are known.
+- Gallery OCR reads the Roman fusion badge and stores null when it cannot read it confidently.
+
+## Remaining limits
+
+The four reviewed plans cover the strongest verified cores in the current supported catalog. Other rosters still use the clearly labelled limited-catalog estimate.
+
+Exact enemy modifiers, immunities, brutality requirements, and current event-tower bonuses are not inferred from a gallery screenshot. The user must select regular or boss and check the visible floor modifier. OCR can still miss clipped cards or an unclear fusion badge; unread values remain unconfirmed.
+
+## Research precedence
+
+Official patch corrections take precedence over older mode guides. In particular, update 6.1 changed Krypt to one floor; update 7.3 documents Stage II Gold eligibility and fourth slots. Realm Klash tower defense uses a seasonal draft and is outside this owned-collection app. Source links and a rules version are retained in src/game.ts and displayed in Field notes.
+
+Personal screenshots and collection backups remain local and are excluded from the published site.

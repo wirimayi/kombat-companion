@@ -4,8 +4,8 @@ export interface OwnedCharacter { id:string; level:number; fusion:number; ascens
 export interface OwnedGear { id:string; fusion:number }
 export interface OwnedKameo { id:string; level:number; fusion:number; available:boolean; attack1Effect?:string; attack2Effect?:string }
 export interface Collection { characters:OwnedCharacter[]; gear:OwnedGear[]; kameos:OwnedKameo[]; talents:string; unknownCards:string[] }
-export interface Settings { mode:'tower'|'krypt'|'realm'; tower:string; difficulty:string; realmMode:'quick'|'survivor'|'klash'; playStyle:'manual'|'auto'; useKameo:boolean }
-export interface Recommendation { team:{character:OwnedCharacter; gear:OwnedGear[]; role:string; reasons:string[]}[]; score:number; explanation:string[]; rotation:string[]; warnings:string[]; kameo?:OwnedKameo; talentAdvice?:string[]; talentNotes?:string }
+export interface Settings { mode:'tower'|'krypt'|'realm'; tower:string; difficulty:string; realmMode:'quick'|'survivor'|'klash'; playStyle:'manual'|'auto'; useKameo:boolean; fightType?:'regular'|'boss' }
+export interface Recommendation { planName?:string; bestFor?:string; team:{character:OwnedCharacter; gear:OwnedGear[]; role:string; reasons:string[]}[]; score:number; explanation:string[]; rotation:string[]; warnings:string[]; kameo?:OwnedKameo; talentAdvice?:string[]; talentNotes?:string }
 const officialSynergy='https://mortalkombatgamessupport.wbgames.com/hc/en-us/articles/360023753294-Team-Synergy-Guide';
 const wiki='https://mortalkombat-mobile.fandom.com/wiki/';
 export const DATA_VERSION='7.3 · checked 14 Sep 2026';
@@ -64,7 +64,7 @@ export const CHARACTERS:CharacterDef[]=[
 const gear=(id:string,name:string,slot:GearDef['slot'],tags:string[],tower?:string,fxTags?:string[]):GearDef=>({id,name,slot,tags,tower,fxTags,source:wiki+name.replaceAll(' ','_')});
 export const GEARS:GearDef[]=[
  gear('wrath-hammer','Wrath Hammer','weapon',['startingPower','damage'],undefined,['critical']),
- gear('bloody-tomahawk','Bloody Tomahawk','weapon',['control'],undefined,['startingPower']),
+ gear('bloody-tomahawk','Bloody Tomahawk','weapon',['startingPower'],undefined,['power']),
  gear('bladed-fan','Bladed Fan','weapon',['blockbreak'],undefined,['sustain']),
  gear('revolvers','Revolvers','weapon',['blockbreak'],undefined,['critical']),
  gear('rusty-chainsaw','Rusty Chainsaw','weapon',['blockbreak'],undefined,['efficiency']),
@@ -96,6 +96,12 @@ export const GEARS:GearDef[]=[
  gear('subtle-tattoo','Subtle Tattoo','accessory',['recovery'],undefined,['efficiency']),
  gear('shao-kahn-helmet',"Shao Kahn’s Helmet",'armor',['critical'],undefined,['defense']),
  gear('shintai-malice','Shintai of Malice','accessory',['defense'],'White Lotus Tower'),
+ gear('bloody-voodoo-doll','Bloody Voodoo Doll','accessory',['power','efficiency']),
+ gear('earth-elemental-facemask','Earth Elemental Facemask','armor',['resistance'],undefined,['power']),
+ gear('weekend-dad','Weekend Dad','accessory',['defense','sustain'],'Twisted Tower',['control']),
+ gear('varmints-lucky-hat',"Varmint's Lucky Hat",'accessory',['defense','control'],'Elder Wind Tower'),
+ gear('ice-daggers','Ice Daggers','weapon',['damage']),
+ gear('cryomancer-armor','Cryomancer Armor','armor',['defense']),
 ];
 export const emptyCollection=():Collection=>({characters:[],gear:[],kameos:[],talents:'',unknownCards:[]});
 const def=(c:OwnedCharacter)=>CHARACTERS.find(d=>d.id===c.id);
@@ -208,6 +214,58 @@ function eligible(c:OwnedCharacter,s:Settings):boolean{
  return true;
 }
 const unique=(values:string[])=>[...new Set(values)];
+
+type VettedPlan={
+ name:string; bestFor:string; modes:Settings['mode'][]; manualOnly?:boolean; priority:number;
+ fightTypes?:('regular'|'boss')[];
+ fighters:[string,string,string]; roles:[string,string,string]; gear:[string[],string[],string[]];
+ why:string[]; rotation:string[];
+};
+
+// These plans encode a specific interaction and play sequence. They deliberately outrank
+// the generic tag scorer when the complete roster is available.
+const VETTED_PLANS:VettedPlan[]=[
+ {name:'MK11 pressure and rescue',bestFor:'Fast Krypt and ordinary Tower fights',modes:['tower','krypt','realm'],fightTypes:['regular'],priority:400,
+  fighters:['mk11-liu-kang','mk11-scorpion','mk11-subzero'],roles:['Opening control','Main attacker','Rescue support'],
+  gear:[['rusty-chainsaw','body-armor','soul-medallion','shintai-malice'],['revolvers','earth-elemental-facemask','bloody-voodoo-doll','weekend-dad'],['ice-daggers','cryomancer-armor','varmints-lucky-hat','storm-hat']],
+  why:['MK11 Liu Kang opens a timed window against Blind and evasion when an MK11 teammate tags in.','MK11 Scorpion supplies the fast basic strings and repeated Fire pressure.','MK11 Sub-Zero stays protected as the safety net and can save each MK11 teammate once.'],
+  rotation:['Do not start with Scorpion. Tag him in immediately so his entry Fire triggers twice.','Use Scorpion basics into Special 1. Tag through Liu Kang when Blind or evasion is stopping attacks.','Keep Sub-Zero out of danger. His job is to remain alive so his ice clone can rescue the other two.']},
+ {name:'Klassic Soak boss team',bestFor:'Manual boss fights that allow Soaked and Lightning',modes:['tower','realm'],manualOnly:true,fightTypes:['boss'],priority:360,
+  fighters:['klassic-rain','klassic-raiden','klassic-liu-kang'],roles:['Soak setup','Team damage','Cripple support'],
+  gear:[['bloody-tomahawk','storm-hat','soul-medallion','wailing-spirit'],['thunderblade','shao-kahn-helmet','varmints-lucky-hat','shintai-malice'],['rusty-chainsaw','earth-elemental-facemask','bloody-voodoo-doll','weekend-dad']],
+  why:['Klassic Rain applies Soaked so Lightning can damage the whole opposing team.','Klassic Raiden converts that setup into team-wide Lightning damage and removes health on tag-in.','Klassic Liu Kang applies Cripple on tag, limiting dangerous specials while Rain rebuilds power.'],
+  rotation:['Build Klassic Rain to Special 2 and apply Soaked before committing Raiden.','Tag Klassic Raiden into the soaked team and use Lightning damage while the debuff is active.','Cycle through Klassic Liu Kang for Cripple. Stop using this plan if the floor resists Soaked or Lightning.']},
+ {name:'Kombat Cup control',bestFor:'Safer manual fights against stun and special pressure',modes:['tower','krypt','realm'],priority:280,
+  fighters:['kombat-cup-johnny','kombat-cup-sonya','kombat-cup-cassie'],roles:['Power-control attacker','Red-card control','Cripple protection'],
+  gear:[['revolvers','earth-elemental-facemask','bloody-voodoo-doll'],['rusty-chainsaw','body-armor','varmints-lucky-hat'],['ice-daggers','cryomancer-armor','soul-medallion']],
+  why:['Johnny supplies repeated Special 1 power drain and receives the full Kombat Cup team bonuses.','Sonya can red-card one dangerous opponent and gives the team stun immunity.','Cassie protects Kombat Cup teammates from Cripple and adds team utility.'],
+  rotation:['Open with Johnny and loop basic attacks into Special 1 to suppress enemy power.','Tag Sonya once to red-card the opponent you want to postpone.','Return to Johnny; keep Cassie safe because her team protection is passive.']},
+ {name:'Strike Force rescue loop',bestFor:'Long fights where a rescue matters more than raw speed',modes:['tower','krypt','realm'],priority:260,
+  fighters:['strike-force-johnny','strike-force-scorpion','strike-force-cassie'],roles:['Power-control attacker','Team rescue','Team support'],
+  gear:[['revolvers','earth-elemental-facemask','bloody-voodoo-doll','weekend-dad'],['rusty-chainsaw','body-armor','varmints-lucky-hat','storm-hat'],['ice-daggers','cryomancer-armor','soul-medallion','shintai-malice']],
+  why:['Johnny is the active power-control attacker.','Scorpion can pull a teammate away from a lethal blow and provides recovery.','Cassie strengthens her Strike Force teammates and adds team power control.'],
+  rotation:['Use Johnny as the active fighter and drain power with Special 1.','Keep Scorpion alive until his rescue has done its job.','Bring Cassie in when enemy reserves have banked power, then return to Johnny.']},
+];
+
+function vettedRecommendations(characters:OwnedCharacter[],gears:OwnedGear[],settings:Settings):Recommendation[]{
+ const ownedCharacters=new Map(characters.map(c=>[c.id,c]));
+ const ownedGear=new Map(gears.map(g=>[g.id,g]));
+ const fightType=settings.fightType??'regular';
+ return VETTED_PLANS.filter(plan=>plan.modes.includes(settings.mode)&&(!plan.manualOnly||settings.playStyle==='manual')&&(settings.mode!=='tower'||!plan.fightTypes||plan.fightTypes.includes(fightType))&&plan.fighters.every(id=>ownedCharacters.has(id))).map(plan=>{
+  const used=new Set<string>();
+  const team=plan.fighters.map((id,index)=>{
+   const chosen=plan.gear[index].flatMap(gearId=>{const item=ownedGear.get(gearId);if(!item||used.has(gearId))return [];used.add(gearId);return [item];}).slice(0,slotCount(ownedCharacters.get(id)!));
+   return {character:ownedCharacters.get(id)!,gear:chosen,role:plan.roles[index],reasons:[plan.why[index]]};
+  });
+  const progressionScore=team.reduce((sum,member)=>sum+progression(member.character),0);
+  const missing=team.reduce((sum,member)=>sum+slotCount(member.character)-member.gear.length,0);
+  const warnings=['Vetted general plan; check the current floor modifier before fighting.'];
+  if(missing)warnings.push(`${missing} planned gear slot${missing===1?' is':'s are'} unavailable in the recognized equipment collection.`);
+  if(settings.mode==='tower')warnings.push('This loadout does not assume unverified event-tower damage or health bonuses. Replace open slots with your current tower gear when its fusion is confirmed.');
+  return {planName:plan.name,bestFor:plan.bestFor,team,score:plan.priority+progressionScore*10,explanation:plan.why,rotation:plan.rotation,warnings};
+ }).sort((a,b)=>b.score-a.score).slice(0,3);
+}
+
 export function recommend(collection:Collection,settings:Settings):{recommendations:Recommendation[];warnings:string[]}{
  const warnings:string[]=[];
  if(!['tower','krypt','realm'].includes(settings.mode)||!['manual','auto'].includes(settings.playStyle))return {recommendations:[],warnings:['Choose a supported mode and play style.']};
@@ -224,6 +282,8 @@ export function recommend(collection:Collection,settings:Settings):{recommendati
  if(persistent(settings))warnings.push('Check the game’s current entry screen and mark fatigued or defeated cards unavailable. The app checks known rarity rules, not every account unlock or fusion requirement.');
  if(characters.length<3)return {recommendations:[],warnings:[...warnings,'Add at least three supported, available fighters allowed in this difficulty.']};
  const gs=new Set<string>();const gears=collection.gear.filter(g=>{if(gs.has(g.id)||!gearMap.has(g.id)||!Number.isInteger(g.fusion)||g.fusion<0||g.fusion>10)return false;gs.add(g.id);return true;});
+ const vetted=vettedRecommendations(characters,gears,settings);
+ if(vetted.length)return {recommendations:vetted,warnings:unique(warnings)};
  const candidates:{cs:OwnedCharacter[];base:number;synergy:ReturnType<typeof synergyFor>}[]=[];
  for(let i=0;i<characters.length;i++)for(let j=i+1;j<characters.length;j++)for(let k=j+1;k<characters.length;k++){
   const cs=[characters[i],characters[j],characters[k]].sort((a,b)=>attackStrength(b,settings)-attackStrength(a,settings));

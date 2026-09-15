@@ -4,7 +4,7 @@ Build reviewed on 15 September 2026.
 
 ## Verified
 
-- 55 automated tests pass. New cases prove that a higher-level distraction cannot displace the reviewed MK11 core, the opening order is correct, gear is never reused, missing slots are not padded, and the Soaked plan is gated to manual Tower bosses.
+- 56 automated tests pass. New cases prove that a higher-level distraction cannot displace the reviewed MK11 core, the opening order is correct, gear is never reused, missing slots are not padded, the Soaked plan is gated to manual Tower bosses, noisy `MKI11` labels resolve correctly, and older recognized gear is remapped to current strategy profiles.
 - TypeScript and the production Vite build pass.
 - The build contains the complete offline OCR assets and regenerated service worker.
 

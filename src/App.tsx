@@ -3,7 +3,7 @@ import {Upload,LoaderCircle,ArrowRight,Check,Shield,Download} from 'lucide-react
 import {CHARACTERS,GEARS,TOWERS,recommend,emptyCollection,type Collection,type Settings} from './game';
 import {loadCollection,loadScans,saveScans,parseBackup,mergeCollections,saveCollection} from './storage';
 import {recognizeScreenshot} from './ocr';
-import {acceptScans,scoringCollection,validateScans,type ScanCard} from './scans';
+import {acceptScans,catalogId,scoringCollection,validateScans,type ScanCard} from './scans';
 const defaults:Settings={mode:'tower',tower:TOWERS[0],difficulty:'normal',realmMode:'quick',playStyle:'manual',useKameo:true,fightType:'regular'};
 const fighter=(id:string)=>CHARACTERS.find(c=>c.id===id)?.name??id;
 const equipment=(id:string)=>GEARS.find(c=>c.id===id)?.name??id;
@@ -41,7 +41,7 @@ export default function App(){
  };
  const update=async(index:number,change:Partial<ScanCard>)=>{try{const next=scans.map((c,i)=>i===index?{...c,...change}:c);await saveScans(next);setScans(next);}catch(e){setError(message(e));}};
  const result=results?.recommendations[option];
- const covered=scans.filter(c=>c.id).length;
+ const covered=scans.filter(c=>catalogId(c)).length;
  if(!ready)return <main className="simple"><p>Opening your collection…</p></main>;
  return <div className="simple-shell"><header><strong>Kombat Companion</strong><span>Private · Free</span></header><main className="simple">
   <h1>Your screenshots.<br/>Your next team.</h1><p className="intro">Upload your fighters, gear and Kameos together. Then choose where you’re playing.</p>
@@ -66,7 +66,7 @@ export default function App(){
   <div className="backup"><button disabled={busy} onClick={download}><Download size={15}/> Save backup</button><button disabled={busy} onClick={()=>backup.current?.click()}>Restore backup</button><input ref={backup} hidden type="file" accept=".json" onChange={e=>{void restore(e.target.files?.[0]);e.target.value='';}}/></div>
   <p className="hint">{scans.length?`${covered} of ${scans.length} scanned cards have strategy profiles. Recognized cards without profiles stay saved but are not ranked.`:`${saved.characters.length} previously saved fighters are included.`}</p>
   <input className="search" aria-label="Search saved cards" placeholder="Search your cards" value={query} onChange={e=>setQuery(e.target.value)}/>
-  {scans.map((c,index)=>c.name.toLowerCase().includes(query.toLowerCase())&&<details className="saved-card" key={`${c.kind}:${c.name}`}><summary>{c.name}<small>{c.kind==='character'?'Fighter':c.kind==='gear'?'Gear':'Kameo'}{c.level!==null?` · Lv ${c.level}`:''}{!c.id?' · Saved, not ranked':''}</small></summary><div className="fields">{c.kind!=='gear'&&<label>Level<input disabled={busy} type="number" min={1} max={60} value={c.level??''} onChange={e=>void update(index,{level:e.target.value?Number(e.target.value):null})}/></label>}<label>Fusion<select disabled={busy} value={c.fusion??''} onChange={e=>void update(index,{fusion:e.target.value?Number(e.target.value):e.target.value==='0'?0:null})}><option value="">Not read</option>{Array.from({length:11},(_,i)=><option key={i} value={i}>{i===0?'Unfused':`Fusion ${i}`}</option>)}</select></label><label>Available<select disabled={busy} value={c.available?'yes':'no'} onChange={e=>void update(index,{available:e.target.value==='yes'})}><option value="yes">Yes</option><option value="no">No / on quest</option></select></label></div></details>)}
+  {scans.map((c,index)=>c.name.toLowerCase().includes(query.toLowerCase())&&<details className="saved-card" key={`${c.kind}:${c.name}`}><summary>{c.name}<small>{c.kind==='character'?'Fighter':c.kind==='gear'?'Gear':'Kameo'}{c.level!==null?` · Lv ${c.level}`:''}{!catalogId(c)?' · Saved, not ranked':''}</small></summary><div className="fields">{c.kind!=='gear'&&<label>Level<input disabled={busy} type="number" min={1} max={60} value={c.level??''} onChange={e=>void update(index,{level:e.target.value?Number(e.target.value):null})}/></label>}<label>Fusion<select disabled={busy} value={c.fusion??''} onChange={e=>void update(index,{fusion:e.target.value?Number(e.target.value):e.target.value==='0'?0:null})}><option value="">Not read</option>{Array.from({length:11},(_,i)=><option key={i} value={i}>{i===0?'Unfused':`Fusion ${i}`}</option>)}</select></label><label>Available<select disabled={busy} value={c.available?'yes':'no'} onChange={e=>void update(index,{available:e.target.value==='yes'})}><option value="yes">Yes</option><option value="no">No / on quest</option></select></label></div></details>)}
   {saved.characters.filter(c=>fighter(c.id).toLowerCase().includes(query.toLowerCase())).map(c=><p key={c.id}>{fighter(c.id)} · Lv {c.level} · Fusion {c.fusion} · previously saved</p>)}</details>
   <footer>Independent fan companion. Screenshots are read on this device.</footer>
  </main></div>;

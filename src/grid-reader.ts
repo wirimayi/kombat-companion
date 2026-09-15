@@ -7,7 +7,9 @@ const norm=(s:string)=>s.toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^a-z0-
 export function matchGridName(text:string,kind:OCRDraft['kind']) {
  const catalog=kind==='gear'?GEARS:CHARACTERS;
  const names=[...new Map([...catalog.map(c=>c.name),...(kind==='gear'?EQUIPMENT_NAMES:FIGHTER_NAMES)].map(name=>[norm(name),name])).values()];
- const cleaned=text.replace(/MK\s*[Ii1l]\s*[Ii1l]/g,'MK11').replace(/MK\s*[Ii1l]\b/g,'MK1');
+ // Tesseract commonly reads the MK11 label as MKII, MKI1 or MKI11. Collapse the
+ // whole noisy numeral instead of replacing only its first two characters.
+ const cleaned=text.replace(/MK\s*[Ii1l]{2,3}/gi,'MK11').replace(/MK\s*[Ii1l]\b/gi,'MK1');
  const n=norm(cleaned);
  // A base name alone cannot establish which fighter variant is pictured.
  const eligible=names.filter(name=>kind==='gear'||!names.some(other=>other!==name&&norm(other).endsWith(norm(name))));

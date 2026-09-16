@@ -14,6 +14,7 @@ describe('collection grid review',()=>{
   expect(matchGridName('I FE\nDarkest Knight\nNOOB SAIBOT |,','character').name).toBe('Darkest Knight Noob Saibot');
   expect(matchGridName('Black Dragon\nERRON BLACK |','character').recognized).toBe(true);
   expect(matchGridName('MKI11 |\nSUB-ZERO |','character').id).toBe('mk11-subzero');
+  expect(matchGridName('YX Se\n3 MKIT™\nSUB-ZERO','character').id).toBe('mk11-subzero');
  });
  it('does not turn an incomplete variant into a base fighter',()=>{
   expect(matchGridName('SCORPION','character').id).toBeNull();
